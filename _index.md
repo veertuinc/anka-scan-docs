@@ -109,7 +109,7 @@ Currently, we provide a scanner binary for each linux distribution that has been
 1. [Download the latest Linux package.](https://veertu.com/downloads/anka-scan-linux/)
     ```bash
     FULL_FILE_NAME=$(echo $(curl -Ls -r 0-1 -o /dev/null -w %{url_effective} https://veertu.com/downloads/anka-scan-linux) | cut -d/ -f5)
-    PARTIAL_FILE_NAME=$(echo $FULL_FILE_NAME | awk -F'.zip' '{print $1}')
+    PARTIAL_FILE_NAME=$(echo $FULL_FILE_NAME | awk -F'.tar.gz' '{print $1}')
     curl -Ls https://veertu.com/downloads/anka-scan-linux -o $FULL_FILE_NAME
     tar -xzvf $FULL_FILE_NAME
     rm -f $FULL_FILE_NAME
