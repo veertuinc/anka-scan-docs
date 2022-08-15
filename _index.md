@@ -109,12 +109,11 @@ Currently, we provide a scanner binary for each linux distribution that has been
 1. [Download the latest Linux package.](https://veertu.com/downloads/anka-scan-linux/)
     ```bash
     FULL_FILE_NAME=$(echo $(curl -Ls -r 0-1 -o /dev/null -w %{url_effective} https://veertu.com/downloads/anka-scan-linux) | cut -d/ -f5)
-    PARTIAL_FILE_NAME=$(echo $FULL_FILE_NAME | awk -F'.tar.gz' '{print $1}')
-    mkdir -p $PARTIAL_FILE_NAME
-    cd $PARTIAL_FILE_NAME
+    PARTIAL_FILE_NAME=$(echo $FULL_FILE_NAME | awk -F'.zip' '{print $1}')
     curl -Ls https://veertu.com/downloads/anka-scan-linux -o $FULL_FILE_NAME
     tar -xzvf $FULL_FILE_NAME
     rm -f $FULL_FILE_NAME
+    cd $PARTIAL_FILE_NAME
     ```
 2. Place the binary under /usr/local/bin (or just execute with `./` in-place).
 
@@ -446,11 +445,10 @@ Report written to "/mnt/config/report_i18n_python.txt"
     ```bash
     FULL_FILE_NAME=$(echo $(curl -Ls -r 0-1 -o /dev/null -w %{url_effective} https://veertu.com/downloads/anka-scan-darwin) | cut -d/ -f5)
     PARTIAL_FILE_NAME=$(echo $FULL_FILE_NAME | awk -F'.zip' '{print $1}')
-    mkdir -p $PARTIAL_FILE_NAME
-    cd $PARTIAL_FILE_NAME
     curl -Ls https://veertu.com/downloads/anka-scan-darwin -o $FULL_FILE_NAME
     unzip $FULL_FILE_NAME
     rm -f $FULL_FILE_NAME
+    cd $PARTIAL_FILE_NAME
     ```
 2. Unarchive and place the binary under /usr/local/bin (or just execute with `./` in-place).
 
