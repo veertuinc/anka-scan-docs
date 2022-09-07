@@ -123,19 +123,20 @@ If you do not see your distro binary, please reach out to support@veertu.com.
 
 ### Docker
 
-If you decide to use docker, you'll need to build the tag locally using a Dockerfile. It must be built with the configuration included inside to allow mounting of the anka-scan.db file from the host (else, it will download the .db each time you need to run the scan and cause delays/networking costs):
+If you decide to use docker, you'll need to build the tag locally using a Dockerfile. It must be built with the configuration included inside to allow mounting of the anka-scan.db file in /tmp from the host, else, it will download the .db each time you need to run the scan and cause delays/networking costs.
 
 ```bash
-***
-  Manually edit the config-example.yaml and change 'db-path: anka-scan.db' to 'db-path: /tmp/anka-scan.db' 
-  You can also modify the anka-scan.log location to /tmp as well
-***
+mv anka-scan_*_linux_amd64 anka-scan_linux_amd64
+cat << SCRIPT > docker-scanner-config.yaml
+db-path: /tmp/anka-scan.db
+log-file: /tmp/scanner.log
+SCRIPT
 cat << SCRIPT > Dockerfile
 FROM debian:stable-slim
 ARG license
 RUN apt -qq update && apt install --yes ca-certificates
-COPY anka-scan_debian_amd64 anka-scan
-COPY config-example.yaml anka-scan.yaml
+COPY anka-scan_linux_amd64 anka-scan
+COPY docker-scanner-config.yaml anka-scan.yaml
 RUN /anka-scan license activate \${license}
 ENTRYPOINT ["/anka-scan"]
 SCRIPT
@@ -145,7 +146,7 @@ docker build --force-rm --tag anka-scan:latest --build-arg license=XXXX-XXXX-XXX
 Once built, you can then run the following to start the scan:
 
 ```bash
-❯ docker run -it --rm -v /Library/Application\ Support/Veertu/Anka/registry:/mnt anka-scan:latest registry_template:c12ccfa5-8757-411e-9505-128190e9854e
+❯ docker run -it --rm -v $(pwd):/tmp -v /Library/Application\ Support/Veertu/Anka/registry:/mnt anka-scan:latest registry_template:c12ccfa5-8757-411e-9505-128190e9854e
  ✔ Vulnerability DB Update [completed]
  ✔ Cataloged packages      [112 packages]
  ✔ Indexed Data Volume     
@@ -178,7 +179,7 @@ Let's say I have three tags for an Anka VM Template: `vanilla`, `vanilla+port-fo
 
 ```bash
 export REGISTRY_PATH="/Library/Application Support/Veertu/Anka/registry" # this location is where my macOS registry is running; it may differ if you're running on linux or have configured it differently.
-❯ docker run -it --rm -v "${REGISTRY_PATH}:/mnt" anka-scan:latest registry_template:c0847bc9-5d2d-4dbc-ba6a-240f7ff08032
+❯ docker run -it --rm -v $(pwd):/tmp -v "${REGISTRY_PATH}:/mnt" anka-scan:latest registry_template:c0847bc9-5d2d-4dbc-ba6a-240f7ff08032
  ✔ Vulnerability DB Update [completed]
  ✔ Cataloged packages      [125 packages]
  ✔ Indexed Data Volume     
@@ -194,10 +195,10 @@ macos-app  python    3.8.9    CVE-2021-3737   7.5    high
 python     pip       20.2.3   CVE-2021-3572   5.7    medium 
 ```
 
-Or, write the report to a file:
+Or, write the report to a file and make it available on the host:
 
 ```bash
-❯ docker run -it --rm -v "${REGISTRY_PATH}:/mnt" -v "$(pwd):/reports" anka-scan:latest registry_template:c0847bc9-5d2d-4dbc-ba6a-240f7ff08032:v1 --report-file /reports/report-$(date +"%m_%d_%Y_%H:%M")
+❯ docker run -it --rm -v $(pwd):/tmp -v "${REGISTRY_PATH}:/mnt" anka-scan:latest registry_template:c0847bc9-5d2d-4dbc-ba6a-240f7ff08032:v1 --report-file /tmp/report-$(date +"%m_%d_%Y_%H:%M")
  ✔ Vulnerability DB Update [completed]
  ✔ Cataloged packages      [125 packages]
  ✔ Indexed Data Volume     
@@ -238,7 +239,7 @@ hard_drives:
 network_cards:
 - mode: shared
 
-❯ docker run -it --rm -v "$(anka config img_lib_dir)/..:/mnt" anka-scan:latest ank_image:/mnt/img_lib/ce87816df16f4661a1be0684add6ca2f.ank
+❯ docker run -it --rm -v $(pwd):/tmp -v "$(anka config img_lib_dir)/..:/mnt" anka-scan:latest ank_image:/mnt/img_lib/ce87816df16f4661a1be0684add6ca2f.ank
  ✔ Indexed Data Volume      ✔ Cataloged packages      [214 packages]
  ✔ Indexed System Volume    ✔ Cataloged packages      [344 packages]
 
@@ -262,7 +263,6 @@ python     numpy         1.8.0rc1  CVE-2019-6446   9.8    critical
 python     numpy         1.8.0rc1  CVE-2014-1859   5.5    medium  
 ```
 
-
 #### Report Formats
 
 By default the human readable table output does not include paths or other information about how the vulnerability was found. Fortunately, we allow you to produce verbose JSON output with that information.
@@ -272,7 +272,7 @@ The use of `--quiet` here is important to avoid any output which is not json par
 {{< /hint >}}
 
 ```bash
-❯ docker run -it --rm -v "$(anka config img_lib_dir)/..:/mnt" anka-scan:latest ank_image:/mnt/img_lib/c2deedc229ae4e8b967aef0ddf4b2813.ank --report-format json --quiet
+❯ docker run -it --rm -v $(pwd):/tmp -v "$(anka config img_lib_dir)/..:/mnt" anka-scan:latest ank_image:/mnt/img_lib/c2deedc229ae4e8b967aef0ddf4b2813.ank --report-format json --quiet
 {
  "matches": [
   {
@@ -403,7 +403,7 @@ You need to specify the "matched-cpe" or URI binding representation in the packa
 {{< /hint >}}
 
 ```bash
-❯ cat /tmp/customConfig.yaml
+❯ cat ./customConfig.yaml
 ignore-packages:
   - "cpe:/a:i18n_project:i18n:::~~~asp.net~~"
   - "cpe:/a:python:python"
@@ -421,16 +421,16 @@ ignore-packages:
 Or, you can ignore specific CVEs:
 
 ```bash
-❯ cat /tmp/customConfig.yaml
+❯ cat ./customConfig.yaml
 ignore-cves:
   - "CVE-2020-7791"
 ```
 
 ```bash
-❯ docker run -it --rm -v "$(anka config img_lib_dir)/..:/mnt" -v "/tmp:/mnt/config" public.ecr.aws/veertu/anka-scan:latest ank_image:/mnt/img_lib/c2deedc229ae4e8b967aef0ddf4b2813.ank --report-format json --config /mnt/config/customConfig.yml --report-file /mnt/config/report_i18n_python.txt
+❯ docker run -it --rm -v $(pwd):/tmp -v "$(anka config img_lib_dir)/..:/mnt" public.ecr.aws/veertu/anka-scan:latest ank_image:/mnt/img_lib/c2deedc229ae4e8b967aef0ddf4b2813.ank --report-format json --config /tmp/customConfig.yml --report-file /tmp/report_i18n_python.txt
  ✔ Indexed Data Volume      ✔ Cataloged packages      [220 packages]
  ✔ Indexed System Volume    ✔ Cataloged packages      [345 packages]
-Report written to "/mnt/config/report_i18n_python.txt"
+Report written to "/tmp/report_i18n_python.txt"
 ```
 
 ## Usage (macOS)
@@ -474,3 +474,9 @@ macos-app  python    3.8.9    CVE-2022-0391   7.5    high
 macos-app  python    3.8.9    CVE-2022-26488  7.0    high      
 python     pip       20.2.3   CVE-2021-3572   5.7    medium 
 ```
+
+## Release Notes
+
+### 1.1.0 - Sep 7th, 2022
+
+- **Bug Fix:** fix for `failed updating db: rename /tmp/scan-tmpdir2641145196/scanner.db scanner.db: invalid cross-device link`
