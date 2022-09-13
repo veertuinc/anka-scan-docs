@@ -8,3 +8,15 @@ The Veertu Anka Scan software solution scans for vulnerabilities in Anka VM temp
 {{< hint info >}}
 We are also working to increase the scope of the Veertu Anka Scan to also scan and report vulnerabilities in AWS EC2 macOS AMIs and not just Anka images.
 {{< /hint >}}
+
+Scanned languages/packages:
+
+- Ruby Gems
+- Python Packages
+- Javascript Node/NPM Packages
+- Java Packages
+- Golang Modules
+- Rust Cargo
+- Brew Formula
+- MacOS Applications
+- Cocoapods
